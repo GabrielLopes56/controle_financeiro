@@ -3,6 +3,7 @@ class Transaction {
   final String description;
   final double amount;
   final String type;
+  final String category;
   final DateTime date;
 
   Transaction({
@@ -10,6 +11,7 @@ class Transaction {
     required this.description,
     required this.amount,
     required this.type,
+    required this.category,
     required this.date,
   });
 
@@ -21,6 +23,7 @@ class Transaction {
       'description': description,
       'amount': amount,
       'type': type,
+      'category': category,
       'date': date.toIso8601String(),
     };
   }
@@ -31,6 +34,7 @@ class Transaction {
       description: map['description'],
       amount: (map['amount'] as num).toDouble(),
       type: map['type'],
+      category: map['category'],
       date: DateTime.parse(map['date']),
     );
   }

@@ -38,6 +38,24 @@ class _HomeScreenState extends State<HomeScreen> {
 
   bool carregando = true;
 
+  final List<String> categoriasEntrada = [
+    'Salário',
+    'Trabalho',
+    'Presente',
+    'Venda',
+    'Outros',
+  ];
+
+  final List<String> categoriasSaida = [
+    'Alimentação',
+    'Transporte',
+    'Moradia',
+    'Contas',
+    'Lazer',
+    'Compras',
+    'Outros',
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -58,8 +76,6 @@ class _HomeScreenState extends State<HomeScreen> {
         movimentacoes = movimentacoesSalvas;
         carregando = false;
       });
-
-      debugPrint('Movimentações carregadas: ${movimentacoes.length}');
     } catch (e) {
       debugPrint('Erro ao carregar movimentações: $e');
 
@@ -90,8 +106,6 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _salvarMovimentacoes() async {
     try {
       await _storageService.saveTransactions(movimentacoes);
-
-      debugPrint('Movimentações salvas: ${movimentacoes.length}');
     } catch (e) {
       debugPrint('Erro ao salvar movimentações: $e');
     }
@@ -117,11 +131,17 @@ class _HomeScreenState extends State<HomeScreen> {
     return '$dia/$mes/$ano';
   }
 
+  String _formatarValor(double valor) {
+    return 'R${valor.toStringAsFixed(2).replaceAll('.', ',')}';
+  }
+
   void _abrirDialogEntrada() {
     final descricaoController = TextEditingController();
     final valorController = TextEditingController();
 
     DateTime dataSelecionada = DateTime.now();
+
+    String categoriaSelecionada = categoriasEntrada.first;
 
     showDialog(
       context: context,
@@ -156,6 +176,31 @@ class _HomeScreenState extends State<HomeScreen> {
                         prefixText: 'R\$ ',
                         border: OutlineInputBorder(),
                       ),
+                    ),
+
+                    const SizedBox(height: 15),
+
+                    DropdownButtonFormField<String>(
+                      initialValue: categoriaSelecionada,
+                      decoration: const InputDecoration(
+                        labelText: 'Categoria',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: categoriasEntrada.map((categoria) {
+                        return DropdownMenuItem<String>(
+                          value: categoria,
+                          child: Text(categoria),
+                        );
+                      }).toList(),
+                      onChanged: (valor) {
+                        if (valor == null) {
+                          return;
+                        }
+
+                        setDialogState(() {
+                          categoriaSelecionada = valor;
+                        });
+                      },
                     ),
 
                     const SizedBox(height: 15),
@@ -222,6 +267,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       description: descricao,
                       amount: valor,
                       type: 'income',
+                      category: categoriaSelecionada,
                       date: dataSelecionada,
                     );
 
@@ -261,6 +307,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
     DateTime dataSelecionada = DateTime.now();
 
+    String categoriaSelecionada = categoriasSaida.first;
+
     showDialog(
       context: context,
       builder: (dialogContext) {
@@ -294,6 +342,31 @@ class _HomeScreenState extends State<HomeScreen> {
                         prefixText: 'R\$ ',
                         border: OutlineInputBorder(),
                       ),
+                    ),
+
+                    const SizedBox(height: 15),
+
+                    DropdownButtonFormField<String>(
+                      initialValue: categoriaSelecionada,
+                      decoration: const InputDecoration(
+                        labelText: 'Categoria',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: categoriasSaida.map((categoria) {
+                        return DropdownMenuItem<String>(
+                          value: categoria,
+                          child: Text(categoria),
+                        );
+                      }).toList(),
+                      onChanged: (valor) {
+                        if (valor == null) {
+                          return;
+                        }
+
+                        setDialogState(() {
+                          categoriaSelecionada = valor;
+                        });
+                      },
                     ),
 
                     const SizedBox(height: 15),
@@ -360,6 +433,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       description: descricao,
                       amount: valor,
                       type: 'expense',
+                      category: categoriaSelecionada,
                       date: dataSelecionada,
                     );
 
@@ -403,6 +477,15 @@ class _HomeScreenState extends State<HomeScreen> {
     String tipoSelecionado = movimentacao.type;
 
     DateTime dataSelecionada = movimentacao.date;
+
+    List<String> categoriasDisponiveis = tipoSelecionado == 'income'
+        ? categoriasEntrada
+        : categoriasSaida;
+
+    String categoriaSelecionada =
+        categoriasDisponiveis.contains(movimentacao.category)
+        ? movimentacao.category
+        : categoriasDisponiveis.first;
 
     showDialog(
       context: context,
@@ -462,6 +545,37 @@ class _HomeScreenState extends State<HomeScreen> {
 
                         setDialogState(() {
                           tipoSelecionado = valor;
+
+                          categoriasDisponiveis = valor == 'income'
+                              ? categoriasEntrada
+                              : categoriasSaida;
+
+                          categoriaSelecionada = categoriasDisponiveis.first;
+                        });
+                      },
+                    ),
+
+                    const SizedBox(height: 15),
+
+                    DropdownButtonFormField<String>(
+                      initialValue: categoriaSelecionada,
+                      decoration: const InputDecoration(
+                        labelText: 'Categoria',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: categoriasDisponiveis.map((categoria) {
+                        return DropdownMenuItem<String>(
+                          value: categoria,
+                          child: Text(categoria),
+                        );
+                      }).toList(),
+                      onChanged: (valor) {
+                        if (valor == null) {
+                          return;
+                        }
+
+                        setDialogState(() {
+                          categoriaSelecionada = valor;
                         });
                       },
                     ),
@@ -530,6 +644,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       description: descricao,
                       amount: valor,
                       type: tipoSelecionado,
+                      category: categoriaSelecionada,
                       date: dataSelecionada,
                     );
 
@@ -569,10 +684,6 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       },
     );
-  }
-
-  String _formatarValor(double valor) {
-    return 'R${valor.toStringAsFixed(2).replaceAll('.', ',')}';
   }
 
   @override
@@ -691,8 +802,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         'Excluir movimentação?',
                                       ),
                                       content: Text(
-                                        'Deseja realmente excluir '
-                                        '"${movimentacao.description}"?',
+                                        'Deseja realmente excluir "${movimentacao.description}"?',
                                       ),
                                       actions: [
                                         TextButton(
@@ -736,8 +846,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             messenger.showSnackBar(
                               SnackBar(
                                 content: Text(
-                                  '${movimentacaoRemovida.description} '
-                                  'foi excluída.',
+                                  '${movimentacaoRemovida.description} foi excluída.',
                                 ),
                                 action: SnackBarAction(
                                   label: 'OK',
@@ -764,11 +873,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
                               title: Text(movimentacao.description),
 
-                              subtitle: Text(_formatarData(movimentacao.date)),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(movimentacao.category),
+                                  Text(_formatarData(movimentacao.date)),
+                                ],
+                              ),
 
                               trailing: Text(
-                                '${ehEntrada ? '+' : '-'} '
-                                '${_formatarValor(movimentacao.amount)}',
+                                '${ehEntrada ? '+' : '-'} ${_formatarValor(movimentacao.amount)}',
                                 style: TextStyle(
                                   color: ehEntrada ? Colors.green : Colors.red,
                                   fontWeight: FontWeight.bold,
